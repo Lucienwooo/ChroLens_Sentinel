@@ -1,3 +1,4 @@
+### **[Download 點我下載](https://github.com/Lucienwooo/ChroLens_Sentinel/releases/download/1.0/ChroLens_Sentinel.exe)**
 # ChroLens_Sentinel
 
 ![ChroLens_Sentinel](./pic/clse1.png)
