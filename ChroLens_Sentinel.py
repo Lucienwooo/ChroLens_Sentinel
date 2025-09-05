@@ -8,6 +8,8 @@ import threading
 import time
 import json
 import os
+import pystray
+from PIL import Image, ImageDraw
 
 DEFAULT_FILES = ["MSBuild.exe", "RegAsm.exe", "RegSvcs.exe", "AddInUtil.exe", "aspnet_compiler.exe"]
 SAVE_FILE = "ChroLens_Sentinel_settings.json"
@@ -20,6 +22,7 @@ class ChroLens_SentinelApp:
         self.file_vars = []
         self.entries = []
         self.running = False
+        self.icon = None  # 系統匣圖示物件
 
         main_frame = tb.Frame(self.root)
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -53,8 +56,43 @@ class ChroLens_SentinelApp:
         tb.Button(action_row, text="停止封鎖", command=self.stop_block, bootstyle="secondary").pack(side=LEFT, padx=5)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.root.bind("<Unmap>", self.on_minimize)  # 監聽縮小事件
 
         self.load_settings()
+
+    def create_tray_icon(self):
+        # 建立一個簡單的圖示
+        image = Image.new('RGB', (64, 64), color=(40, 40, 40))
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((16, 16, 48, 48), fill=(0, 180, 255))
+        menu = pystray.Menu(
+            pystray.MenuItem('還原視窗', self.show_window),
+            pystray.MenuItem('結束程式', self.exit_app)
+        )
+        self.icon = pystray.Icon("CL_Sentinel", image, "CL_Sentinel", menu)
+
+        # 設定雙擊事件
+        def on_double_click(icon, item=None):
+            self.show_window(icon, item)
+        self.icon.on_double_click = on_double_click
+
+        threading.Thread(target=self.icon.run, daemon=True).start()
+
+    def on_minimize(self, event):
+        if self.root.state() == "iconic":
+            self.root.withdraw()
+            if self.icon is None:
+                self.create_tray_icon()
+
+    def show_window(self, icon, item):
+        self.root.deiconify()
+        self.root.state("normal")
+        if self.icon:
+            self.icon.stop()
+            self.icon = None
+
+    def exit_app(self, icon, item):
+        self.on_close()
 
     def update_window_height(self):
         base_height = 250
@@ -154,7 +192,9 @@ class ChroLens_SentinelApp:
 
     def on_close(self):
         self.running = False
-        self.save_settings(silent=True)  # 關閉時不顯示提示視窗
+        self.save_settings(silent=True)
+        if self.icon:
+            self.icon.stop()
         self.root.destroy()
 
 if __name__ == "__main__":
