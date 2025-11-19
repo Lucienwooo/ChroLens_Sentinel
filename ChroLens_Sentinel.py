@@ -10,14 +10,17 @@ import json
 import os
 import pystray
 from PIL import Image, ImageDraw
+from update_manager import UpdateManager
+from update_dialog import UpdateDialog, NoUpdateDialog
 
+CURRENT_VERSION = "1.0"
 DEFAULT_FILES = ["MSBuild.exe", "RegAsm.exe", "RegSvcs.exe", "AddInUtil.exe", "aspnet_compiler.exe"]
 SAVE_FILE = "ChroLens_Sentinel_settings.json"
 
 class ChroLens_SentinelApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("CL_Sentinel")
+        self.root.title(f"ChroLens_Sentinel {CURRENT_VERSION}")
         self.style = tb.Style("darkly")
         self.file_vars = []
         self.entries = []
@@ -54,6 +57,7 @@ class ChroLens_SentinelApp:
         action_row.pack(fill="x", pady=(0, 8))
         tb.Button(action_row, text="啟動自動封鎖", command=self.start_block, bootstyle="primary").pack(side=LEFT, padx=5)
         tb.Button(action_row, text="停止封鎖", command=self.stop_block, bootstyle="secondary").pack(side=LEFT, padx=5)
+        tb.Button(action_row, text="關於", command=self.show_about, bootstyle="info").pack(side=LEFT, padx=5)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.bind("<Unmap>", self.on_minimize)  # 監聽縮小事件
@@ -189,6 +193,58 @@ class ChroLens_SentinelApp:
                 self.add_file_entry("")
         except Exception as e:
             messagebox.showerror("載入失敗", str(e))
+
+    def show_about(self):
+        """顯示關於視窗"""
+        about_win = tb.Toplevel(self.root)
+        about_win.title("關於 ChroLens_Sentinel")
+        about_win.geometry("450x300")
+        about_win.resizable(False, False)
+        about_win.grab_set()
+        
+        # 置中
+        self.root.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - 225
+        y = self.root.winfo_y() + 80
+        about_win.geometry(f"+{x}+{y}")
+        
+        frm = tb.Frame(about_win, padding=20)
+        frm.pack(fill="both", expand=True)
+        
+        tb.Label(frm, text=f"ChroLens_Sentinel {CURRENT_VERSION}", font=("Microsoft JhengHei", 14, "bold")).pack(anchor="w", pady=(0, 10))
+        tb.Label(frm, text="定時關閉與封鎖指定程式\n防止背景偷跑佔用資源", font=("Microsoft JhengHei", 11)).pack(anchor="w", pady=(0, 16))
+        
+        link = tk.Label(frm, text="ChroLens_模擬器討論區", font=("Microsoft JhengHei", 10, "underline"), fg="#5865F2", cursor="hand2")
+        link.pack(anchor="w")
+        link.bind("<Button-1>", lambda e: os.startfile("https://discord.gg/72Kbs4WPPn"))
+        
+        github = tk.Label(frm, text="查看更多工具(巴哈)", font=("Microsoft JhengHei", 10, "underline"), fg="#24292f", cursor="hand2")
+        github.pack(anchor="w", pady=(8, 0))
+        github.bind("<Button-1>", lambda e: os.startfile("https://home.gamer.com.tw/profile/index_creation.php?owner=umiwued&folder=523848"))
+        
+        tb.Label(frm, text="Created By Lucienwooo", font=("Microsoft JhengHei", 10)).pack(anchor="w", pady=(16, 0))
+        
+        # 檢查更新功能
+        def check_for_updates():
+            def update_check_thread():
+                try:
+                    updater = UpdateManager(CURRENT_VERSION)
+                    update_info = updater.check_for_updates()
+                    
+                    if update_info:
+                        about_win.after(0, lambda: UpdateDialog(self.root, updater, update_info))
+                    else:
+                        about_win.after(0, lambda: NoUpdateDialog(about_win, CURRENT_VERSION))
+                except Exception as e:
+                    about_win.after(0, lambda: messagebox.showerror("錯誤", f"檢查更新失敗：{str(e)}"))
+            
+            threading.Thread(target=update_check_thread, daemon=True).start()
+        
+        # 按鈕容器
+        btn_frame = tb.Frame(frm)
+        btn_frame.pack(anchor="e", pady=(16, 0))
+        tb.Button(btn_frame, text="檢查更新", command=check_for_updates, width=10, bootstyle="info").pack(side=LEFT, padx=(0, 8))
+        tb.Button(btn_frame, text="關閉", command=about_win.destroy, width=8, bootstyle="secondary").pack(side=LEFT)
 
     def on_close(self):
         self.running = False
