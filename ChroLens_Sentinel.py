@@ -13,6 +13,16 @@ from PIL import Image, ImageDraw
 from update_manager import UpdateManager
 from update_dialog import UpdateDialog, NoUpdateDialog
 
+# 版本管理模組
+try:
+    from version_manager import VersionManager
+    from version_info_dialog import VersionInfoDialog
+    VERSION_MANAGER_AVAILABLE = True
+except ImportError:
+    print("版本管理模組未安裝，版本檢查功能將停用")
+    VERSION_MANAGER_AVAILABLE = False
+
+
 CURRENT_VERSION = "1.0"
 DEFAULT_FILES = ["MSBuild.exe", "RegAsm.exe", "RegSvcs.exe", "AddInUtil.exe", "aspnet_compiler.exe"]
 SAVE_FILE = "ChroLens_Sentinel_settings.json"
