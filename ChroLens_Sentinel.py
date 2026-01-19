@@ -24,6 +24,7 @@ except ImportError:
 
 
 CURRENT_VERSION = "1.0"
+GITHUB_REPO = "Lucienwooo/ChroLens_Sentinel"
 DEFAULT_FILES = ["MSBuild.exe", "RegAsm.exe", "RegSvcs.exe", "AddInUtil.exe", "aspnet_compiler.exe"]
 SAVE_FILE = "ChroLens_Sentinel_settings.json"
 
